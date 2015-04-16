@@ -35,7 +35,7 @@ uint8_t *packetData;
 // aprs spec is around 10 minutes or so (faster if your speed is faster)
 // but probably not more than once per minute.
 long lastUpdate=0;
-int Updatedelay=10; //delay between packets in minutes.
+int Updatedelay=600; //delay between packets in seconds.
 
 
 static void smartdelay(unsigned long ms);
@@ -67,6 +67,12 @@ void setup()
   // pin 8 is a pushbutton to allow the user to send a packet whenever they want.
   pinMode(8,INPUT);
   
+  u8g.firstPage();  
+  do {
+    draw(200.00,1.01);
+  } while( u8g.nextPage() );
+  
+ 
   // Initialise APRS library - This starts the mode
   APRS_init(ADC_REFERENCE, OPEN_SQUELCH);
   
@@ -119,6 +125,8 @@ void loop()
   unsigned long age, date, time, chars = 0;
   unsigned short sentences = 0, failed = 0;
   byte buttonState;
+  unsigned long gps_speed;
+  int FlexibleDelay = Updatedelay;
 
   //print some various status  
   print_int(gps.satellites(), TinyGPS::GPS_INVALID_SATELLITES, 5);
@@ -126,13 +134,29 @@ void loop()
   
   // get where we are.
   gps.f_get_position(&flat, &flon, &age);
+  // speed comes in 100th's of a knot.  30 knots = 34.5 mph
+  // 100 for gps_speed = 1 knot.
+  gps_speed = gps.speed();
   
-  // more debug print.
+  // 10 mph = no alteration
+  // 20 mph = /2
+  // 30 mph = /3
+  // 40 mph = /4 etc.
+  if ((gps_speed > 100) && (gps_speed <20000)){
+     FlexibleDelay = Updatedelay /(gps_speed / 1000) ;  
+  } else {
+      FlexibleDelay = Updatedelay; 
+  }
+    // more debug print.
   print_float(flat, TinyGPS::GPS_INVALID_F_ANGLE, 10, 6);
   print_float(flon, TinyGPS::GPS_INVALID_F_ANGLE, 11, 6);
   print_int(age, TinyGPS::GPS_INVALID_AGE, 5);
+  
   print_date(gps);
   
+  Serial.print(gps_speed);
+  Serial.print(" ");
+  Serial.print(FlexibleDelay);
 
 if ((flat==TinyGPS::GPS_INVALID_F_ANGLE) || (flon==TinyGPS::GPS_INVALID_F_ANGLE)){
  // Serial.println("data is bad...");
@@ -158,7 +182,7 @@ if ((flat==TinyGPS::GPS_INVALID_F_ANGLE) || (flon==TinyGPS::GPS_INVALID_F_ANGLE)
   // check to see if the user pushed the button
   buttonState=digitalRead(8);
   
-  if ((buttonState==1) || ((millis()-lastUpdate)/60000 > Updatedelay)||(Updatedelay==0)){
+  if ((buttonState==1) || ((millis()-lastUpdate)/1000 > FlexibleDelay)||(Updatedelay==0)){
 //  Serial.println();
 //  Serial.println(millis());
 //  Serial.println(lastUpdate);
