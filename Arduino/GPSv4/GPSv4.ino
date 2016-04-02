@@ -77,6 +77,7 @@ void setup()
   APRS_init(ADC_REFERENCE, OPEN_SQUELCH);
   
   // You must at a minimum configure your callsign and SSID
+// you may also not use this software without a valid license
   APRS_setCallsign("CALLSIGN", 1);
  
   APRS_printSettings();

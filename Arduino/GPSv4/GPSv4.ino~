@@ -77,7 +77,7 @@ void setup()
   APRS_init(ADC_REFERENCE, OPEN_SQUELCH);
   
   // You must at a minimum configure your callsign and SSID
-  APRS_setCallsign("KG7LCN", 1);
+  APRS_setCallsign("CALLSIGN", 1);
  
   APRS_printSettings();
   Serial.print(F("Free RAM:     ")); Serial.println(freeMemory());
